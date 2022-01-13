@@ -1,0 +1,35 @@
+#Xtuz,2000011068,lian
+	.pos 0
+	irmovq stack,%rsp
+	call main
+	halt
+	
+	.align 8
+ele1:
+	.quad 0x00a
+	.quad ele2
+ele2:
+	.quad 0x0b0
+	.quad ele3
+ele3:
+	.quad 0xc00
+	.quad 0
+	
+#sum_list ,ls in rdi%
+main:
+	irmovq ele1,%rdi
+rsum_list:
+	pushq %r8		#save %r8
+	irmovq $0,%rax		#val=0
+	andq %rdi,%rdi		#%rdi==0,exit
+	je return
+	mrmovq 0(%rdi),%r8	#%r8=ls->val
+	mrmovq 8(%rdi),%rdi	#%rdi=ls-next
+	call rsum_list
+	addq %r8,%rax		
+return:
+	popq %r8
+	ret
+	
+	.pos 0x400
+stack:

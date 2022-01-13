@@ -1,0 +1,65 @@
+#Xtuz
+	.pos 0
+	irmovq stack,%rsp
+	call main
+	halt
+
+.align 8
+Array:
+	.quad 0xbca
+	.quad 0xcba
+	.quad 0xacb
+	.quad 0xcab
+	.quad 0xabc
+	.quad 0xbac
+	
+#bubble_sort,*data in %rdi,count in %rsi
+main:
+	pushq %r8
+	irmovq $8,%r8		#%r8=8
+	pushq %rax
+	pushq %rbx
+	pushq %rcx
+	
+	irmovq Array,%rdi
+	irmovq $6,%rsi
+	addq %rsi,%rsi
+	addq %rsi,%rsi
+	addq %rsi,%rsi
+	addq %rdi,%rsi
+	subq %r8,%rsi		#%rsi=last
+loop0:	
+	subq %rdi,%rsi
+	jle return
+	addq %rdi,%rsi		#%rsi=last,%rdi=*data
+	rrmovq %rdi,%rdx	#%rdx=i
+loop1:	
+	subq %rsi,%rdx
+	jge loop2		#i>=laxt
+	addq %rsi,%rdx
+	
+	rrmovq %rdx,%rcx
+	addq %r8,%rcx
+	mrmovq 0(%rdx),%rax	#%rax=*i
+	mrmovq 8(%rdx),%rbx	#%rbx=*(i+1)
+	subq %rax,%rbx
+	cmovge %rcx,%rdx
+	jge loop1
+	addq %rax,%rbx
+	rmmovq %rax,8(%rdx)
+	rmmovq %rbx,0(%rdx)
+	addq %r8,%rdx
+	jmp loop1
+
+loop2:
+	subq %r8,%rsi
+	jmp loop0
+	
+return:
+	popq %rcx
+	popq %rbx
+	popq %rax
+	popq %r8
+	ret	
+	.pos 0x800
+stack:

@@ -1,0 +1,165 @@
+#Xtuz
+#/* $begin ncopy-ys */
+##################################################################
+# ncopy.ys - Copy a src block of len words to dst.
+# Return the number of positive words (>0) contained in src.
+#
+# Include your name and ID here.
+#lian,2000011068
+# Describe how and why you modified the baseline code.
+#1.irmovq+addq->iaddq
+#2.%rax initilize to 0 ,del "xor %rax,%rax"
+#3.mrmovq+rmmovq->load use,所以尝试把判断和count+1扔到内存操作中间搞定气泡
+#4.iaddq set cc,del "andq %rax,%rax"
+#5.9路循环展开。小于9的处理考虑到x能执行x-1一定可以执行,倒序写
+#6.注意到采取总是选择分支策略，改变跳转的顺序，降低len较小时预测错误的次数。
+#7.采取二分法决定怎么跳转,并对小于3的特殊照顾（重新设置了顺序并且减少了跳转指令），保证len较小时操作数尽量少
+#8.注意到跳转时条件码为<=0，在跳转前设置合适的iaddq保证条件码
+#9.
+##################################################################
+# Do not modify this portion
+# Function prologue.
+# %rdi = src, %rsi = dst, %rdx = len
+ncopy:
+
+##################################################################
+# You can modify this portion
+	# Loop header
+	iaddq $-9,%rdx		
+	jl except		
+
+Loop:	mrmovq (%rdi), %r8
+	mrmovq 8(%rdi),%r9
+	mrmovq 16(%rdi),%r10
+	mrmovq 24(%rdi),%r11
+	rmmovq %r8, (%rsi)
+	rmmovq %r9, 8(%rsi)
+	rmmovq %r10,16(%rsi)
+	rmmovq %r11,24(%rsi)
+	andq %r8, %r8	
+	jle npos
+	iaddq $1,%rax
+npos:	andq %r9,%r9
+	jle Npos
+	iaddq $1,%rax	
+Npos:	andq %r10, %r10
+	jle npos1
+	iaddq $1,%rax
+npos1:	andq %r11,%r11
+	jle Npos1
+	iaddq $1,%rax
+
+Npos1:	mrmovq 32(%rdi),%r8
+	mrmovq 40(%rdi),%r9
+	mrmovq 48(%rdi),%r10
+	mrmovq 56(%rdi),%r11
+	rmmovq %r8,32(%rsi)
+	rmmovq %r9,40(%rsi)
+	rmmovq %r10, 48(%rsi)
+	rmmovq %r11, 56(%rsi)
+	andq %r8, %r8
+	jle npos2
+	iaddq $1,%rax
+npos2:	andq %r9,%r9
+	jle Npos2
+	iaddq $1,%rax
+Npos2:	andq %r10, %r10
+	jle npos3
+	iaddq $1,%rax
+npos3:	andq %r11,%r11
+	jle Npos3
+	iaddq $1,%rax
+	
+Npos3:	mrmovq 64(%rdi), %r10
+	iaddq $72,%rdi
+	andq %r10, %r10
+	rmmovq %r10, 64(%rsi)
+	jle Npos4
+	iaddq $1,%rax
+
+Npos4:	iaddq $72,%rsi
+	iaddq $-9, %rdx
+	jge Loop
+
+except:
+	iaddq $6,%rdx
+	jl small
+	jg big
+	jmp exc3
+	
+small:
+	iaddq $2,%rdx
+	je exc1
+	iaddq $-1,%rdx
+	je exc2
+	ret
+
+big:
+	iaddq $-3,%rdx
+	jl bigsmall
+	jg bigbig
+	jmp exc6
+bigsmall:
+	iaddq $1,%rdx
+	jl exc4
+	jmp exc5
+bigbig:
+	iaddq $-1,%rdx
+	je exc7
+
+exc8:	mrmovq 56(%rdi),%r10	
+	rmmovq %r10,56(%rsi)
+	andq %r10, %r10	
+	
+exc7:	mrmovq 48(%rdi), %r10	
+	jle exc77
+	iaddq $1,%rax
+exc77:	rmmovq %r10,48(%rsi)
+	andq %r10, %r10
+
+exc6:	mrmovq 40(%rdi), %r10
+	jle exc66
+	iaddq $1,%rax
+exc66:	rmmovq %r10,40(%rsi)
+	andq %r10, %r10
+	
+exc5:	mrmovq 32(%rdi), %r10
+	jle exc55
+	iaddq $1,%rax
+exc55:	rmmovq %r10,32(%rsi)
+	andq %r10, %r10
+
+exc4:	mrmovq 24(%rdi), %r10
+	jle exc44
+	iaddq $1,%rax	
+exc44:	rmmovq %r10,24(%rsi)
+	andq %r10, %r10
+
+exc3:	mrmovq 16(%rdi), %r10
+	jle exc33
+	iaddq $1,%rax
+exc33:	rmmovq %r10,16(%rsi)
+	andq %r10, %r10
+
+exc2:	mrmovq 8(%rdi), %r10
+	jle exc22
+	iaddq $1,%rax	
+exc22:	rmmovq %r10,8(%rsi)
+	andq %r10, %r10
+
+exc1:	mrmovq (%rdi), %r10
+	jle exc11
+	iaddq $1,%rax	
+exc11:	rmmovq %r10,(%rsi)
+	andq %r10, %r10
+	jle Done
+	iaddq $1,%rax
+##################################################################
+# Do not modify the following section of code
+# Function epilogue.
+Done:
+	ret
+##################################################################
+# Keep the following label at the end of your function
+End:
+#/* $end ncopy-ys */
